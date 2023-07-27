@@ -91,7 +91,7 @@ def add_timeline(df):
 def display_submission(submission, related_data):
     st.image('./data/profile.jpeg')
 
-    # Streamlit
+    ###### Submission summary
     st.title('Submission summary')
 
     summary = submission['summary']
@@ -99,14 +99,14 @@ def display_submission(submission, related_data):
 
     st.markdown(bordered_text, unsafe_allow_html=True)
 
-
+    ###### Current position
     st.title('Current position')
-    # st.write(timeline_chart)
     position = submission['position']
     bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
 
     st.markdown(bordered_text, unsafe_allow_html=True)
 
+    st.title('Timeline')
     add_timeline(related_data)
 
 

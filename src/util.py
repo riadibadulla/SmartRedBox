@@ -14,7 +14,7 @@ from langchain.text_splitter import TokenTextSplitter
 import os
 from langchain.docstore.document import Document
 import pandas as pd
-import api_keys
+# import api_keys
 
 #anthropic
 import anthropic
@@ -103,4 +103,39 @@ def doc_to_json(path):
     print(response['choices'][0]['message']['content'])
 
 def summary_with_claude(fine_name='regulations.pdf'):
-    print(f'The sentiment is: {sentiment}')
+    Anthropic(api_key=api_keys.API_CLAUDE)
+    with open(fine_name, 'rb') as pdf_file:
+        # Initialize a PDF file reader
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+
+        # Initialize a string to hold all the text
+        pdf_text = ''
+
+        # Loop through each page in the PDF
+        for page_num in range(len(pdf_reader.pages)):
+            # Get the text from the page and add it to the total text
+            page = pdf_reader.pages[page_num]
+            pdf_text += page.extract_text()
+
+    # Now `pdf_text` contains all the text from the PDF
+    prompt = " '"+pdf_text+"' summarise this document "
+
+
+    res = anthropic_client.completions.create(prompt=f"{HUMAN_PROMPT} {prompt} {AI_PROMPT}", model="claude-v1.3-100k", max_tokens_to_sample=40000)
+
+    return res.completion
+
+def analyze_sentiment(text):
+    response = openai.Completion.create(
+        engine="text-davinci-003",  # You can use other engines like "text-curie-003"
+        prompt=f"The following text is: '{text}'. The sentiment of this text is",
+        temperature=0.3,
+        max_tokens=60
+    )
+
+    return response.choices[0].text.strip()
+
+# Test the sentiment analysis
+text = "I am very happy today!"
+sentiment = analyze_sentiment(text)
+print(f'The sentiment is: {sentiment}')
