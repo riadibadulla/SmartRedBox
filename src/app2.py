@@ -16,7 +16,9 @@ def add_linebreaks(string, every=64):
 
 def load_submission(path):
     submission = {'summary': None, 'position': None}
-    submission['summary'] = summarise(path)
+    j = doc_to_json(path)
+    submission = j
+    #submission['summary'] = summarise(path)
     submission['position'] = get_position(path)
     return submission
 
@@ -77,29 +79,36 @@ def add_timeline(df):
         x=[row['Date']], 
         y=[row['Sentiment']],
         mode='markers',
-        marker=dict(size=row['Relevance']*50, color=row['Color']),
+        marker=dict(size=row['Relevance']*75, color=row['Color']),
         # marker=dict(size=10, color=row['Color']),
         text=['<b>Date:</b> '+str(row['Date']) + '<br><b>Headline:</b> '+str(row['Headline']) + '<br><b>Summary:</b> '+ summary_with_breaks],
         hoverinfo='text',
-        name= str(row['Topic'])
+        showlegend=False,
+        #name= str(row['Topic'])
     ))
 
     # Display the figure with Streamlit
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def display_submission(submission, related_data):
     col1, col2, col3 = st.columns([5,5,5])
     col1.header("Submission")
     ###### Submission summary
-    summary = submission['summary']
+    summary = submission['Summary']
     bordered_text = f'<div style="border:2px solid black; padding:10px">{summary}</div>'
 
     col1.markdown(bordered_text, unsafe_allow_html=True)
 
     col1.header('Deadline')
-    deadlines = 'test deadline'
+    deadlines = submission['Deadline']
     bordered_text = f'<div style="border:2px solid red; padding:10px">{deadlines}</div>'
+
+    col1.markdown(bordered_text, unsafe_allow_html=True)
+
+    col1.header('Actions')
+    actions = '<br><br>'.join(submission['Actions'])
+    bordered_text = f'<div style="border:2px solid red; padding:10px">{actions}</div>'
 
     col1.markdown(bordered_text, unsafe_allow_html=True)
 
