@@ -182,6 +182,7 @@ tzlocal==4.3.1
 url-normalize==1.4.3
 urllib3==2.0.4
 uvicorn==0.23.1
+
 uvloop==0.17.0
 validators==0.20.0
 watchdog==3.0.0
@@ -190,3 +191,6 @@ wcwidth==0.2.6
 websockets==11.0.3
 yarl==1.9.2
 zipp==3.16.2
+
+anthropic
+

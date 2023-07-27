@@ -11,11 +11,6 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains.mapreduce import MapReduceChain
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import TokenTextSplitter
-import os
-from langchain.docstore.document import Document
-import pandas as pd
-
-api_key = os.getenv("OPENAI_API_KEY")
 
 def summarise(path_to_pdf = 'data/a_pro-innovation_approach_to_AI_regulation.pdf'):
     llm = OpenAI(temperature=0, openai_api_key=api_key) 
@@ -61,3 +56,6 @@ def get_position(submission):
     if position is None:
         position = 'We do not have any position on this submission at the moment.'
     return position
+
+    chain = load_summarize_chain(llm, chain_type="map_reduce")
+    return chain.run(docs)
