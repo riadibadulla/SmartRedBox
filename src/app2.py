@@ -140,13 +140,20 @@ def display_submission(submission, related_data):
     col2.markdown(bordered_text, unsafe_allow_html=True)
 
     col2.header('Actions')
-    actions = '<br><br>'.join(submission['Actions'])
+
+    if (isinstance(submission['Actions'], str)):
+        actions = submission['Actions']
+    else:
+        actions = '<br>'.join(submission['Actions'])
     bordered_text = f'<div style="border:2px solid red; padding:10px">{actions}</div>'
 
     col2.markdown(bordered_text, unsafe_allow_html=True)
 
     col2.header('Relevant People')
-    people = '<br><br>'.join(submission['Relevant People'])
+    if (isinstance(submission['Relevant People'], str)):
+        people = submission['Relevant People']
+    else:
+        people = '<br><br>'.join(submission['Relevant People'])
     bordered_text = f'<div style="border:2px solid red; padding:10px">{people}</div>'
 
     col2.markdown(bordered_text, unsafe_allow_html=True)
@@ -184,7 +191,7 @@ def upload():
     if uploaded_file is not None:
         show_file.info("File received!")
         submission = load_submission(uploaded_file)
-        related_data = get_related_data(uploaded_file)
+        related_data = get_related_data(submission)
         display_submission(submission, related_data)
         add_timeline(related_data)
 

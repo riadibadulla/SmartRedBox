@@ -17,6 +17,7 @@ import api_keys
 import os
 from langchain.docstore.document import Document
 import pandas as pd
+import random
 # import api_keys
 
 import pickle
@@ -265,8 +266,14 @@ def print_recommendations_from_strings(
 def get_related_data(submission):
     # return data from Luke
     related_data = None
+    #d = pd.DataFrame(submission)
+    #df2 = pd.concat([df, d])
+    #print(df2)
+    #strings = df['Summary'].to_list()
+    #strings.append(submission['Summary'])
 
-    recc, dist = print_recommendations_from_strings(strings=df['Summary'].to_list(), index_of_source_string=0, k_nearest_neighbors=5)
+    recc, dist = print_recommendations_from_strings(strings=df['Summary'].to_list(),
+                                                    index_of_source_string=0, k_nearest_neighbors=5)
     out = df.iloc[recc]
     colours = {
         'Email': 'blue',
