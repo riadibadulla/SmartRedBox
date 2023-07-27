@@ -5,7 +5,7 @@ from util import *
 import time
 from streamlit_option_menu import option_menu
 from datetime import datetime
-
+from datetime import datetime, timedelta
 
 def add_linebreaks(string, every=64):
     lines = []
@@ -81,11 +81,13 @@ def add_timeline(df):
         # marker=dict(size=10, color=row['Color']),
         text=['<b>Date:</b> '+str(row['Date']) + '<br><b>Headline:</b> '+str(row['Headline']) + '<br><b>Summary:</b> '+ summary_with_breaks],
         hoverinfo='text',
-        name= str(row['Topic'])
+        name= str(row['Topic']),
+        showlegend=False  # This will hide the legend
     ))
 
+    show_legend()
     # Display the figure with Streamlit
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def display_submission(submission, related_data):
@@ -125,6 +127,27 @@ def display_submission(submission, related_data):
 
     st.title('Timeline')
 
+def show_legend():
+    legend_html = """
+    <div style="position: relative; left: 20px; top: 20px; padding: 10px; z-index: 5;">
+        <h3>Legend</h3>
+        <table>
+            <tr>
+                <td style="padding: 5px;"><span style="color: red; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Red: Category 1</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px;"><span style="color: blue; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Blue: Category 2</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px;"><span style="color: green; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Green: Category 3</td>
+            </tr>
+        </table>
+    </div>
+    """
+    st.markdown(legend_html, unsafe_allow_html=True)
 
 def upload():
     uploaded_file = st.file_uploader("Upload your submission: ", type="pdf")
@@ -135,6 +158,7 @@ def upload():
         related_data = get_related_data(uploaded_file)
         display_submission(submission, related_data)
         add_timeline(related_data)
+        
 
 def toolbar():
     
@@ -150,14 +174,17 @@ def toolbar():
         )
     if selected == 'Tom Waterhouse':
         st.title(f'Welcome {selected}')
-
-st.set_page_config(layout="wide")
-# Create a Plotly figure for the timeline
 fig = go.Figure()
+st.set_page_config(layout="wide")
 
 toolbar()
 st.image('./data/profile.jpeg')
 upload()
+
+
+
+
+
 
 
 

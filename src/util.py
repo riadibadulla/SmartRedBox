@@ -42,7 +42,7 @@ def fake_data():
     data = {
     'Headline': ['AI regulation: pro-innovation, responsible growth.', 'Event 1', 'Event 1', 'Event 1'],
     'Sentiment': [1, 1, -1, 3],
-    'Date': ['2020-01-01', '2021-03-01', '2022-04-01', '2022-05-01'],
+    'Date': ['2020-01-01', '2020-03-01', '2022-04-01', '2022-05-01'],
     'Relevance': [0.7, 0.4, 0.8, 0.95],
     'Color': ['blue', 'blue', 'red', 'green'],
     'Topic' :['Submissions', 'Submissions', 'Internal sources', 'Public'],
