@@ -120,12 +120,14 @@ def upload():
         display_submission(submission, related_data)
 
 def toolbar():
+    
     with st.sidebar:
+        st.title('REDUX - The electronic red box')
         selected = option_menu(
             menu_title= 'Private secretaries',
             options=['Tom Waterhouse', 'Saisakul Chernbumroong', 'Somebody else'],
-            icons=['arrow-through-heart', 'house', 'house'],
-            menu_icon='cast',
+            icons=['tree', 'house', 'house'],
+            menu_icon='arrow-through-heart',
             default_index= 0,
             orientation='vertical',
         )
@@ -136,7 +138,7 @@ def toolbar():
 # Create a Plotly figure for the timeline
 fig = go.Figure()
 
-st.title('REDUX')
+# st.title('REDUX')
 
 toolbar()
 upload()
