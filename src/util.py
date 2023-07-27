@@ -214,7 +214,7 @@ def embedding_from_string(
     if (string, model) not in embedding_cache.keys():
         print("not in cache")
         embedding_cache[(string, model)] = get_embedding(string, model)
-        with open(embedding_cache_path, "wb") as embedding_cache_file:
+        with open('cache2.pkl', "wb") as embedding_cache_file:
             pickle.dump(embedding_cache, embedding_cache_file)
     return embedding_cache[(string, model)]
 
@@ -266,15 +266,20 @@ def print_recommendations_from_strings(
 def get_related_data(submission):
     # return data from Luke
     related_data = None
-    #d = pd.DataFrame(submission)
-    #df2 = pd.concat([df, d])
-    #print(df2)
+    print(submission)
+    d = pd.DataFrame.from_dict(submission, orient='index')
+    d = d.transpose()
+    print(d)
+    df2 = pd.concat([df, d], ignore_index=True)
+    print(df2)
     #strings = df['Summary'].to_list()
     #strings.append(submission['Summary'])
 
-    recc, dist = print_recommendations_from_strings(strings=df['Summary'].to_list(),
-                                                    index_of_source_string=0, k_nearest_neighbors=5)
-    out = df.iloc[recc]
+    print(df2.iloc[len(df2)-1])
+
+    recc, dist = print_recommendations_from_strings(strings=df2['Summary'].to_list(),
+                                                    index_of_source_string=len(df2)-1, k_nearest_neighbors=5)
+    out = df2.iloc[recc]
     colours = {
         'Email': 'blue',
         'Submission': 'red',
@@ -288,6 +293,7 @@ def get_related_data(submission):
     out = out[out["Relevance"] > 0.8]
     out = out[out["Relevance"] != 1.0]
     out['Relevance'] = (out['Relevance']-out['Relevance'].min())/(out['Relevance'].max()-out['Relevance'].min())
+    out['Relevance'] = out['Relevance'].apply(lambda x: 0.30 if x < 0.30 else x)
     print(out)
     related_data = out
 

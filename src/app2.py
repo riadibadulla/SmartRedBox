@@ -143,6 +143,8 @@ def display_submission(submission, related_data):
 
     if (isinstance(submission['Actions'], str)):
         actions = submission['Actions']
+    elif (submission['Actions'] == None):
+        actions = 'None'
     else:
         actions = '<br>'.join(submission['Actions'])
     bordered_text = f'<div style="border:2px solid red; padding:10px">{actions}</div>'
@@ -152,6 +154,8 @@ def display_submission(submission, related_data):
     col2.header('Relevant People')
     if (isinstance(submission['Relevant People'], str)):
         people = submission['Relevant People']
+    elif (submission['Relevant People'] == None):
+        people = 'None'
     else:
         people = '<br><br>'.join(submission['Relevant People'])
     bordered_text = f'<div style="border:2px solid red; padding:10px">{people}</div>'
