@@ -38,6 +38,41 @@ def summarise(path_to_pdf = 'data/a_pro-innovation_approach_to_AI_regulation.pdf
     chain = load_summarize_chain(llm, chain_type="map_reduce")
     return chain.run(docs)
 
+def doc_to_json(path):
+    system="""
+    You are an AI assistant that converts document text into valid json in the following format:
+
+    {
+        "Type": <type of document, this could be an email, meeting minutes, submission>,
+        "Title": <title of the document>,
+        "Topic": <overall topic discussed in the document>,
+        "Summary": <summary of the document content>,
+        "Content": null,
+        "Relevant People": <list of people mentioned in the document, inlcuding sender and recipients, format as: Forname Surname>,
+        "Director": <director mentioned in the document>,
+        "Team": <teams mentioned in the document that need to give clearance, where a name is provided>,
+        "Sentiment": <sentiment analysis of the document, should be a floating point number between -1.00 and 1.00, with -1.00 being negative and 1.00 being positive and 0.00 being neutral, must be filled>,
+        "Deadline": <deadline of any actions mentioned in the document, format as exactly as shown in the document>,
+        "Actions": <any follow-up actions mentioned in the document, with added deadline as per "Deadline" field>,
+        "Notes": <any notes attached to the document>,
+        "Date": <date of the document in the format: YYYY-MM-DD, if no date is found then null>
+    }
+
+    You must extract this information from the document accuractly.
+    """
+
+    prompt = extract_text(path)
+
+    response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ]
+    )
+
+    print(response['choices'][0]['message']['content'])
+
 def summary_with_claude(fine_name='regulations.pdf'):
     Anthropic(api_key=api_keys.API_CLAUDE)
     with open(fine_name, 'rb') as pdf_file:
