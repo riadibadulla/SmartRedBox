@@ -11,7 +11,18 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains.mapreduce import MapReduceChain
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import TokenTextSplitter
+import json
+import pandas as pd
 import api_keys
+
+import pickle
+from openai.embeddings_utils import (
+    get_embedding,
+    distances_from_embeddings,
+    tsne_components_from_embeddings,
+    chart_from_components,
+    indices_of_nearest_neighbors_from_distances,
+)
 
 #anthropic
 import anthropic
@@ -39,11 +50,12 @@ def summarise(path_to_pdf = 'data/a_pro-innovation_approach_to_AI_regulation.pdf
     return chain.run(docs)
 
 def doc_to_json(path):
+    openai.api_key = api_keys.OPENAI
     system="""
     You are an AI assistant that converts document text into valid json in the following format:
 
     {
-        "Type": <type of document, this could be an email, meeting minutes, submission>,
+        "Type": <type of document, this can only be one of the following: Email, Meeting minutes, Speech, or Submission>,
         "Title": <title of the document>,
         "Topic": <overall topic discussed in the document>,
         "Summary": <summary of the document content>,
@@ -71,7 +83,9 @@ def doc_to_json(path):
         ]
     )
 
-    print(response['choices'][0]['message']['content'])
+    print('done')
+
+    return response['choices'][0]['message']['content'] 
 
 def summary_with_claude(fine_name='regulations.pdf'):
     Anthropic(api_key=api_keys.API_CLAUDE)
@@ -110,3 +124,100 @@ def summary_with_claude(fine_name='regulations.pdf'):
     text = "I am very happy today!"
     sentiment = analyze_sentiment(text)
     print(f'The sentiment is: {sentiment}')
+
+#data = []
+#import os
+#for filename in os.listdir('data'):
+#    f = os.path.join('data', filename)
+#    # checking if it is a file
+#    if os.path.isfile(f):
+#        data.append(json.loads(doc_to_json(f)))
+#        time.sleep(10)
+#
+#df = pd.DataFrame.from_records(data)
+#
+#print(df)
+#
+#df.to_csv('test.csv')
+
+# constants
+#EMBEDDING_MODEL = "text-embedding-ada-002"
+
+#dataset_path = "test.csv"
+#df = pd.read_csv(dataset_path)
+
+#embedding_cache = {}
+#embedding_cache_path = "cache.pkl"
+
+#try:
+#    embedding_cache = pd.read_pickle(embedding_cache_path)
+#except FileNotFoundError:
+#    embedding_cache = {}
+#with open(embedding_cache_path, "wb") as embedding_cache_file:
+#    pickle.dump(embedding_cache, embedding_cache_file)
+
+#openai.api_key = api_keys.OPENAI
+
+def embedding_from_string(
+    string: str,
+    model: str = EMBEDDING_MODEL,
+    embedding_cache=embedding_cache
+) -> list:
+    """Return embedding of given string, using a cache to avoid recomputing."""
+    if (string, model) not in embedding_cache.keys():
+        embedding_cache[(string, model)] = get_embedding(string, model)
+        with open(embedding_cache_path, "wb") as embedding_cache_file:
+            pickle.dump(embedding_cache, embedding_cache_file)
+    return embedding_cache[(string, model)]
+
+
+def print_recommendations_from_strings(
+    strings: list[str],
+    index_of_source_string: int,
+    k_nearest_neighbors: int = 3,
+    model=EMBEDDING_MODEL,
+) -> list[int]:
+    """Print out the k nearest neighbors of a given string."""
+    # get embeddings for all strings
+    embeddings = []
+
+    for string in strings:
+        embeddings.append(embedding_from_string(string, model=model))
+        time.sleep(20)
+        print('done')
+
+    # get the embedding of the source string
+    query_embedding = embeddings[index_of_source_string]
+    # get distances between the source embedding and other embeddings (function from embeddings_utils.py)
+    distances = distances_from_embeddings(query_embedding, embeddings, distance_metric="cosine")
+    print(distances)
+    # get indices of nearest neighbors (function from embeddings_utils.py)
+    indices_of_nearest_neighbors = indices_of_nearest_neighbors_from_distances(distances)
+    # print out source string
+    query_string = strings[index_of_source_string]
+    print(f"Source string: {query_string}")
+    # print out its k nearest neighbors
+    k_counter = 0
+    for i in indices_of_nearest_neighbors:
+        # skip any strings that are identical matches to the starting string
+        if query_string == strings[i]:
+            continue
+        # stop after printing out k articles
+        if k_counter >= k_nearest_neighbors:
+            break
+        k_counter += 1
+        # print out the similar strings and their distances
+        print(
+            f"""
+        --- Recommendation #{k_counter} (nearest neighbor {k_counter} of {k_nearest_neighbors}) ---
+        String: {strings[i]}
+        Distance: {distances[i]:0.3f}"""
+        )
+    return indices_of_nearest_neighbors
+
+#recc = print_recommendations_from_strings(
+#    strings=df['Summary'].to_list(),  # let's base similarity off of the article description
+#    index_of_source_string=0,  # let's look at articles similar to the first one about Tony Blair
+#    k_nearest_neighbors=5,  # let's look at the 5 most similar articles
+#)
+
