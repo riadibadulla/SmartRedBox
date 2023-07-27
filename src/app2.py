@@ -19,7 +19,7 @@ def load_submission(path):
     j = doc_to_json(path)
     submission = j
     #submission['summary'] = summarise(path)
-    submission['position'] = get_position(path)
+    #submission['position'] = get_position(path)
     return submission
 
 def find_min_max_date(df):
@@ -79,7 +79,7 @@ def add_timeline(df):
         x=[row['Date']], 
         y=[row['Sentiment']],
         mode='markers',
-        marker=dict(size=row['Relevance']*75, color=row['Color']),
+        marker=dict(size=row['Relevance']*40, color=row['Color']),
         # marker=dict(size=10, color=row['Color']),
         text=['<b>Date:</b> '+str(row['Date']) + '<br><b>Headline:</b> '+str(row['Headline']) + '<br><b>Summary:</b> '+ summary_with_breaks],
         hoverinfo='text',
@@ -90,8 +90,34 @@ def add_timeline(df):
     # Display the figure with Streamlit
     st.plotly_chart(fig, use_container_width=True)
 
+    legend_html = """
+    <div style="position: relative; left: 20px; top: 20px; padding: 10px; z-index: 5;">
+        <h3>Legend</h3>
+        <table>
+            <tr>
+                <td style="padding: 5px;"><span style="color: red; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Red: Submission</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px;"><span style="color: blue; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Blue: Email</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px;"><span style="color: green; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Green: Meeting Minutes</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px;"><span style="color: yellow; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Yellow: Speech</td>
+            </tr>
+        </table>
+    </div>
+    """
+    st.markdown(legend_html, unsafe_allow_html=True)
+
 
 def display_submission(submission, related_data):
+    position = get_position(related_data)
     col1, col2, col3 = st.columns([5,5,5])
     col1.header("Submission")
     ###### Submission summary
@@ -100,37 +126,54 @@ def display_submission(submission, related_data):
 
     col1.markdown(bordered_text, unsafe_allow_html=True)
 
-    col1.header('Deadline')
+    ###### Current position
+    col1.header('Current position')
+    #position = submission['position']
+    bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
+
+    col1.markdown(bordered_text, unsafe_allow_html=True)
+
+    col2.header('Deadline')
     deadlines = submission['Deadline']
     bordered_text = f'<div style="border:2px solid red; padding:10px">{deadlines}</div>'
 
-    col1.markdown(bordered_text, unsafe_allow_html=True)
+    col2.markdown(bordered_text, unsafe_allow_html=True)
 
-    col1.header('Actions')
+    col2.header('Actions')
     actions = '<br><br>'.join(submission['Actions'])
     bordered_text = f'<div style="border:2px solid red; padding:10px">{actions}</div>'
 
-    col1.markdown(bordered_text, unsafe_allow_html=True)
+    col2.markdown(bordered_text, unsafe_allow_html=True)
 
-    ###### Related information
-    col2.header('Related information')
-    position = submission['position']
-    bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
+    col2.header('Relevant People')
+    people = '<br><br>'.join(submission['Relevant People'])
+    bordered_text = f'<div style="border:2px solid red; padding:10px">{people}</div>'
 
     col2.markdown(bordered_text, unsafe_allow_html=True)
 
-    ###### Current position
-    col3.header('Current position')
-    position = submission['position']
-    bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
+    rel = "<hr>"
+    for i, row in related_data.iterrows():
+        if i < 5:
+            s = """Date: {0}
+            <br>
+            {1}
+            <hr>
+            """.format(row['Date'], row['Headline'])
+            rel = rel + s
+
+    ###### Related information
+    col3.header('Related information')
+    #position = submission['position']
+    bordered_text = f'<div style="border:2px solid black; padding:10px">{rel}</div>'
 
     col3.markdown(bordered_text, unsafe_allow_html=True)
 
-    col3.header('Previous position')
-    position = submission['position']
-    bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
 
-    col3.markdown(bordered_text, unsafe_allow_html=True)
+    #col3.header('Previous position')
+    #position = submission['position']
+    #bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
+
+    #col3.markdown(bordered_text, unsafe_allow_html=True)
 
     st.title('Timeline')
 

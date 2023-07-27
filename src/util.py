@@ -64,8 +64,32 @@ def fake_data():
     }
     return pd.DataFrame(data)
 
-def get_position(submission):
+def get_position(relevant):
     position = None
+    openai.api_key = api_keys.OPENAI
+    system="""
+    You are an AI assistant that reads summaries of documents and determines the opinions of the minister referred to in the documents about the topics discussed in the documents.
+
+    You must do this in less than 100 words.
+    """
+
+    prompt = ""
+
+    for i, row in relevant.iterrows():
+        prompt = prompt + "\n" + row['Summary']
+
+    response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ]
+    )
+
+    print('done')
+
+    position = response['choices'][0]['message']['content']
+
     # do something
     if position is None:
         position = 'We do not have any position on this submission at the moment.'
@@ -251,9 +275,12 @@ def get_related_data(submission):
         'Speech': 'yellow'
     }
     out['Color'] = out['Type'].map(colours)
-    out['Relevance'] = dist
+    out['Relevance'] = [1-i for i in dist]
 
     out = out.rename(columns={'Title': 'Headline', 'Type': 'Topic'})
+    out = out[out["Relevance"] > 0.8]
+    out = out[out["Relevance"] != 1.0]
+    out['Relevance'] = (out['Relevance']-out['Relevance'].min())/(out['Relevance'].max()-out['Relevance'].min())
     print(out)
     related_data = out
 
