@@ -16,8 +16,10 @@ def add_linebreaks(string, every=64):
 
 def load_submission(path):
     submission = {'summary': None, 'position': None}
-    submission['summary'] = summarise(path)
-    submission['position'] = get_position(path)
+    j = doc_to_json(path)
+    submission = j
+    #submission['summary'] = summarise(path)
+    #submission['position'] = get_position(path)
     return submission
 
 def find_min_max_date(df):
@@ -77,51 +79,112 @@ def add_timeline(df):
         x=[row['Date']], 
         y=[row['Sentiment']],
         mode='markers',
-        marker=dict(size=row['Relevance']*50, color=row['Color']),
+        marker=dict(size=row['Relevance']*40, color=row['Color']),
         # marker=dict(size=10, color=row['Color']),
         text=['<b>Date:</b> '+str(row['Date']) + '<br><b>Headline:</b> '+str(row['Headline']) + '<br><b>Summary:</b> '+ summary_with_breaks],
         hoverinfo='text',
-        name= str(row['Topic'])
+        showlegend=False,
+        #name= str(row['Topic'])
     ))
 
     # Display the figure with Streamlit
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
+
+    legend_html = """
+    <div style="position: relative; left: 20px; top: 20px; padding: 10px; z-index: 5;">
+        <h3>Legend</h3>
+        <table>
+            <tr>
+                <td style="padding: 5px;"><span style="color: red; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Red: Submission</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px;"><span style="color: blue; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Blue: Email</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px;"><span style="color: green; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Green: Meeting Minutes</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px;"><span style="color: yellow; font-size: 20px;">&#9679;</span></td>
+                <td style="padding: 5px;">Yellow: Speech</td>
+            </tr>
+        </table>
+    </div>
+    """
+    st.markdown(legend_html, unsafe_allow_html=True)
 
 
 def display_submission(submission, related_data):
+    position = get_position(related_data)
     col1, col2, col3 = st.columns([5,5,5])
     col1.header("Submission")
     ###### Submission summary
-    summary = submission['summary']
+    summary = submission['Summary']
     bordered_text = f'<div style="border:2px solid black; padding:10px">{summary}</div>'
 
     col1.markdown(bordered_text, unsafe_allow_html=True)
 
-    col1.header('Deadline')
-    deadlines = 'test deadline'
-    bordered_text = f'<div style="border:2px solid red; padding:10px">{deadlines}</div>'
+    ###### Current position
+    col1.header('Current position')
+    #position = submission['position']
+    bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
 
     col1.markdown(bordered_text, unsafe_allow_html=True)
 
-    ###### Related information
-    col2.header('Related information')
-    position = submission['position']
-    bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
+    col2.header('Deadline')
+    deadlines = submission['Deadline']
+    bordered_text = f'<div style="border:2px solid red; padding:10px">{deadlines}</div>'
 
     col2.markdown(bordered_text, unsafe_allow_html=True)
 
-    ###### Current position
-    col3.header('Current position')
-    position = submission['position']
-    bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
+    col2.header('Actions')
+
+    if (isinstance(submission['Actions'], str)):
+        actions = submission['Actions']
+    elif (submission['Actions'] == None):
+        actions = 'None'
+    else:
+        actions = '<br>'.join(submission['Actions'])
+    bordered_text = f'<div style="border:2px solid red; padding:10px">{actions}</div>'
+
+    col2.markdown(bordered_text, unsafe_allow_html=True)
+
+    col2.header('Relevant People')
+    if (isinstance(submission['Relevant People'], str)):
+        people = submission['Relevant People']
+    elif (submission['Relevant People'] == None):
+        people = 'None'
+    else:
+        people = '<br><br>'.join(submission['Relevant People'])
+    bordered_text = f'<div style="border:2px solid red; padding:10px">{people}</div>'
+
+    col2.markdown(bordered_text, unsafe_allow_html=True)
+
+    rel = "<hr>"
+    for i, row in related_data.iterrows():
+        if i < 5:
+            s = """Date: {0}
+            <br>
+            {1}
+            <hr>
+            """.format(row['Date'], row['Headline'])
+            rel = rel + s
+
+    ###### Related information
+    col3.header('Related information')
+    #position = submission['position']
+    bordered_text = f'<div style="border:2px solid black; padding:10px">{rel}</div>'
 
     col3.markdown(bordered_text, unsafe_allow_html=True)
 
-    col3.header('Previous position')
-    position = submission['position']
-    bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
 
-    col3.markdown(bordered_text, unsafe_allow_html=True)
+    #col3.header('Previous position')
+    #position = submission['position']
+    #bordered_text = f'<div style="border:2px solid black; padding:10px">{position}</div>'
+
+    #col3.markdown(bordered_text, unsafe_allow_html=True)
 
     st.title('Timeline')
 
@@ -132,7 +195,7 @@ def upload():
     if uploaded_file is not None:
         show_file.info("File received!")
         submission = load_submission(uploaded_file)
-        related_data = get_related_data(uploaded_file)
+        related_data = get_related_data(submission)
         display_submission(submission, related_data)
         add_timeline(related_data)
 

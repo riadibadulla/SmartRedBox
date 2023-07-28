@@ -17,6 +17,7 @@ import api_keys
 import os
 from langchain.docstore.document import Document
 import pandas as pd
+import random
 # import api_keys
 
 import pickle
@@ -64,16 +65,32 @@ def fake_data():
     }
     return pd.DataFrame(data)
 
-def get_related_data(submission):
-    # return data from Luke
-    related_data = None
-    if related_data is None:
-        related_data = fake_data()
-    return related_data
-
-
-def get_position(submission):
+def get_position(relevant):
     position = None
+    openai.api_key = api_keys.OPENAI
+    system="""
+    You are an AI assistant that reads summaries of documents and determines the opinions of the minister referred to in the documents about the topics discussed in the documents.
+
+    You must do this in less than 100 words.
+    """
+
+    prompt = ""
+
+    for i, row in relevant.iterrows():
+        prompt = prompt + "\n" + row['Summary']
+
+    response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ]
+    )
+
+    print('done')
+
+    position = response['choices'][0]['message']['content']
+
     # do something
     if position is None:
         position = 'We do not have any position on this submission at the moment.'
@@ -115,7 +132,7 @@ def doc_to_json(path):
 
     print('done')
 
-    return response['choices'][0]['message']['content'] 
+    return json.loads(response['choices'][0]['message']['content'])
 
 def summary_with_claude(fine_name='regulations.pdf'):
     Anthropic(api_key=api_keys.API_CLAUDE)
@@ -171,22 +188,22 @@ def analyze_sentiment(text):
 #df.to_csv('test.csv')
 
 # constants
-#EMBEDDING_MODEL = "text-embedding-ada-002"
+EMBEDDING_MODEL = "text-embedding-ada-002"
 
-#dataset_path = "test.csv"
-#df = pd.read_csv(dataset_path)
+dataset_path = "test.csv"
+df = pd.read_csv(dataset_path)
 
-#embedding_cache = {}
-#embedding_cache_path = "cache.pkl"
+embedding_cache = {}
+embedding_cache_path = "cache.pkl"
 
-#try:
-#    embedding_cache = pd.read_pickle(embedding_cache_path)
-#except FileNotFoundError:
-#    embedding_cache = {}
-#with open(embedding_cache_path, "wb") as embedding_cache_file:
-#    pickle.dump(embedding_cache, embedding_cache_file)
+try:
+    embedding_cache = pd.read_pickle(embedding_cache_path)
+except FileNotFoundError:
+    embedding_cache = {}
+with open(embedding_cache_path, "wb") as embedding_cache_file:
+    pickle.dump(embedding_cache, embedding_cache_file)
 
-#openai.api_key = api_keys.OPENAI
+openai.api_key = api_keys.OPENAI
 
 def embedding_from_string(
     string: str,
@@ -195,8 +212,9 @@ def embedding_from_string(
 ) -> list:
     """Return embedding of given string, using a cache to avoid recomputing."""
     if (string, model) not in embedding_cache.keys():
+        print("not in cache")
         embedding_cache[(string, model)] = get_embedding(string, model)
-        with open(embedding_cache_path, "wb") as embedding_cache_file:
+        with open('cache2.pkl', "wb") as embedding_cache_file:
             pickle.dump(embedding_cache, embedding_cache_file)
     return embedding_cache[(string, model)]
 
@@ -213,7 +231,7 @@ def print_recommendations_from_strings(
 
     for string in strings:
         embeddings.append(embedding_from_string(string, model=model))
-        time.sleep(20)
+        #time.sleep(20)
         print('done')
 
     # get the embedding of the source string
@@ -243,7 +261,45 @@ def print_recommendations_from_strings(
         String: {strings[i]}
         Distance: {distances[i]:0.3f}"""
         )
-    return indices_of_nearest_neighbors
+    return indices_of_nearest_neighbors, distances
+
+def get_related_data(submission):
+    # return data from Luke
+    related_data = None
+    print(submission)
+    d = pd.DataFrame.from_dict(submission, orient='index')
+    d = d.transpose()
+    print(d)
+    df2 = pd.concat([df, d], ignore_index=True)
+    print(df2)
+    #strings = df['Summary'].to_list()
+    #strings.append(submission['Summary'])
+
+    print(df2.iloc[len(df2)-1])
+
+    recc, dist = print_recommendations_from_strings(strings=df2['Summary'].to_list(),
+                                                    index_of_source_string=len(df2)-1, k_nearest_neighbors=5)
+    out = df2.iloc[recc]
+    colours = {
+        'Email': 'blue',
+        'Submission': 'red',
+        'Meeting minutes': 'green',
+        'Speech': 'yellow'
+    }
+    out['Color'] = out['Type'].map(colours)
+    out['Relevance'] = [1-i for i in dist]
+
+    out = out.rename(columns={'Title': 'Headline', 'Type': 'Topic'})
+    out = out[out["Relevance"] > 0.8]
+    out = out[out["Relevance"] != 1.0]
+    out['Relevance'] = (out['Relevance']-out['Relevance'].min())/(out['Relevance'].max()-out['Relevance'].min())
+    out['Relevance'] = out['Relevance'].apply(lambda x: 0.30 if x < 0.30 else x)
+    print(out)
+    related_data = out
+
+    if related_data is None:
+        related_data = fake_data()
+    return related_data
 
 #recc = print_recommendations_from_strings(
 #    strings=df['Summary'].to_list(),  # let's base similarity off of the article description
